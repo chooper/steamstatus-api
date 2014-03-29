@@ -7,7 +7,6 @@ import (
     "io/ioutil"
 	"log"
     "net/http"
-    "os"
     "regexp"
     "time"
 )
@@ -17,7 +16,7 @@ type ProfileData struct {
     SteamId string `json:"steamid"`
     PersonaName string `json:"personaname"`
     Summary string `json:"summary"`
-    InGame string
+    InGame string `json:"ingame"`
 }
 
 func GetProfile(username string) ProfileData {
@@ -77,21 +76,29 @@ func FetchProfile(username string) chan ProfileData {
 func main() {
 	flag.Parse()
 
-    if len(os.Args) < 2 {
-        panic("Not enough args")
+
+    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+        profile_c := FetchProfile(r.URL.Path[1:])
+
+        select {
+        case profile := <- profile_c:
+            log.Print("Prof: %v", profile)
+            profile_json, err := json.Marshal(profile)
+            if err != nil {
+                panic(err)
+            }
+            w.Write(profile_json)
+        case <- time.After(600 * time.Millisecond):
+            log.Print("Timed out!")
+        }
+    })
+
+    s := &http.Server{
+        Addr:           ":8080",
+        ReadTimeout:    10 * time.Second,
+        WriteTimeout:   10 * time.Second,
+        MaxHeaderBytes: 1 << 20,
     }
-
-    start := time.Now()
-    profile_c := FetchProfile(os.Args[1])
-
-    select {
-    case profile := <- profile_c:
-        log.Print("Prof: %v", profile)
-    case <- time.After(600 * time.Millisecond):
-        log.Print("Timed out!")
-    }
-
-    elapsed := time.Since(start)
-    log.Printf("Execution took %s", elapsed)
+    log.Fatal(s.ListenAndServe())
 }
 
