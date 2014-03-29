@@ -3,37 +3,37 @@ package main
 
 import (
     "encoding/json"
-	"flag"
+    "flag"
     "io/ioutil"
-	"log"
+    "log"
     "net/http"
     "regexp"
+    "strings"
     "time"
 )
 
 type ProfileData struct {
-    Url string `json:"url"`
-    SteamId string `json:"steamid"`
-    PersonaName string `json:"personaname"`
-    Summary string `json:"summary"`
-    InGame string `json:"ingame"`
+    Url             string  `json:"url"`
+    SteamId         string  `json:"steamid"`
+    PersonaName     string  `json:"personaname"`
+    Summary         string  `json:"summary"`
+    InGame          string  `json:"ingame"`
 }
 
 func GetProfile(username string) ProfileData {
+    // Download the profile from steam
     profile_url := "http://steamcommunity.com/id/" + username + "/"
-
     response, err := http.Get(profile_url)
     defer response.Body.Close()
     if err != nil {
         panic(err)
     }
-
     body, err := ioutil.ReadAll(response.Body)
     if err != nil {
         panic(err)
     }
 
-    // Get my profile info
+    // Parse profile data
     var profile ProfileData
     json_regex := regexp.MustCompile(`g_rgProfileData = (.*);`)
     json_matches := json_regex.FindStringSubmatch(string(body))
@@ -51,47 +51,63 @@ func GetProfile(username string) ProfileData {
     var ingame bool = false
     if len(ingame_matches) > 0 && ingame_matches[1] == "Currently In-Game" {
         ingame = true
+
+        // Find out which game
+        gamename_regex := regexp.MustCompile(`<div class="profile_in_game_name">(.*)</div>`)
+        gamename_matches := gamename_regex.FindStringSubmatch(string(body))
+
+        // Add the game name to ProfileData
+        if ingame && len(gamename_matches) > 0 {
+            profile.InGame = gamename_matches[1]
+        }
     }
 
-    // Find out which game
-    gamename_regex := regexp.MustCompile(`<div class="profile_in_game_name">(.*)</div>`)
-    gamename_matches := gamename_regex.FindStringSubmatch(string(body))
-
-    // Add the game name to my ProfileData
-    if ingame && len(gamename_matches) > 0 {
-        profile.InGame = gamename_matches[1]
-    }
     return profile
 }
 
-func FetchProfile(username string) chan ProfileData {
-    // Make 3 parallel attempts to fetch a user's profile
-    c := make(chan ProfileData)
-    for i := 0; i < 3; i++ {
-        go func() { c <- GetProfile(username) }()
+func FetchProfile(username string, c chan ProfileData) {
+    go func() { c <- GetProfile(username) }()
+}
+
+func ProfileHandler(w http.ResponseWriter, r *http.Request) {
+    // TODO: Error handling on bad input
+
+    r.ParseForm()
+    usernames := strings.Split(r.Form.Get("usernames"), ",")
+    user_count := len(usernames)
+    var profiles = make([]ProfileData, user_count)
+
+    // Request multiple users at once
+    var profile_c = make(chan ProfileData)
+    for _, username := range usernames {
+        FetchProfile(username, profile_c)
     }
-    return c
+
+    // Wait for responses
+    timeout := time.After(1000 * time.Millisecond)
+    for idx := 0; idx < user_count; idx++ {
+        select {
+        case profile := <- profile_c:
+            profiles[idx] = profile
+        case <- timeout:
+            log.Print("Timed out!")
+            break
+        }
+    }
+
+    // Assemble and send response
+    log.Printf("profiles: %v", profiles)
+    profile_json, err := json.Marshal(profiles)
+    if err != nil {
+        panic(err)
+    }
+    w.Write(profile_json)
 }
 
 func main() {
-	flag.Parse()
+    flag.Parse()
 
-
-    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        profile_c := FetchProfile(r.URL.Path[1:])
-
-        select {
-        case profile := <- profile_c:
-            log.Print("Prof: %v", profile)
-            profile_json, err := json.Marshal(profile)
-            if err != nil {
-                panic(err)
-            }
-            w.Write(profile_json)
-        case <- time.After(600 * time.Millisecond):
-            log.Print("Timed out!")
-        }
-    })
+    http.HandleFunc("/", ProfileHandler)
 
     s := &http.Server{
         Addr:           ":8080",
