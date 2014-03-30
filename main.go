@@ -113,7 +113,7 @@ func main() {
     }
 
 
-    http.HandleFunc("/", ProfileHandler)
+    http.HandleFunc("/status", ProfileHandler)
 
     s := &http.Server{
         Addr:           ":" + assigned_port,
