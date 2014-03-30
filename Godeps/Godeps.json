@@ -1,0 +1,5 @@
+{
+	"ImportPath": "github.com/chooper/steam-status",
+	"GoVersion": "go1.1.2",
+	"Deps": []
+}
