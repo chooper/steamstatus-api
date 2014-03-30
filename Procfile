@@ -1,1 +1,1 @@
-poller: steam-status
+web: steam-status
