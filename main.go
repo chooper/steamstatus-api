@@ -7,6 +7,7 @@ import (
     "io/ioutil"
     "log"
     "net/http"
+    "os"
     "regexp"
     "strings"
     "time"
@@ -106,11 +107,16 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
     flag.Parse()
+    var assigned_port string
+    if assigned_port = os.Getenv("PORT"); assigned_port == "" {
+        assigned_port = "5000"
+    }
+
 
     http.HandleFunc("/", ProfileHandler)
 
     s := &http.Server{
-        Addr:           ":8080",
+        Addr:           ":" + assigned_port,
         ReadTimeout:    10 * time.Second,
         WriteTimeout:   10 * time.Second,
         MaxHeaderBytes: 1 << 20,
