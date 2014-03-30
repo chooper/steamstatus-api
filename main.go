@@ -109,7 +109,7 @@ func main() {
     flag.Parse()
     assigned_port := ":" + os.Getenv("PORT")
 
-    http.HandleFunc("/", ProfileHandler)
+    http.HandleFunc("/status", ProfileHandler)
 
     s := &http.Server{
         Addr:           assigned_port,
