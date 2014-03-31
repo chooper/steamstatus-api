@@ -66,27 +66,19 @@ func GetProfile(username string) ProfileData {
     return profile
 }
 
-func FetchProfile(username string, c chan ProfileData) {
-    go func() { c <- GetProfile(username) }()
-}
-
-func ProfileHandler(w http.ResponseWriter, r *http.Request) {
-    // TODO: Error handling on bad input
-
-    r.ParseForm()
-    usernames := strings.Split(r.Form.Get("usernames"), ",")
-    user_count := len(usernames)
-    var profiles = make([]ProfileData, user_count)
+func FetchProfiles(usernames []string) []ProfileData {
+    var profile_count int = len(usernames)
+    var profiles = make([]ProfileData, profile_count)
+    var profile_c = make(chan ProfileData)
 
     // Request multiple users at once
-    var profile_c = make(chan ProfileData)
     for _, username := range usernames {
-        FetchProfile(username, profile_c)
+        go FetchProfile(username, profile_c)
     }
 
     // Wait for responses
     timeout := time.After(1000 * time.Millisecond)
-    for idx := 0; idx < user_count; idx++ {
+    for idx := 0; idx < profile_count; idx++ {
         select {
         case profile := <- profile_c:
             profiles[idx] = profile
@@ -95,6 +87,26 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
             break
         }
     }
+    return profiles
+}
+
+func FetchProfile(username string, c chan ProfileData) {
+    fanout_c := make(chan ProfileData)
+    for i := 0; i < 3; i++ {
+        go func() { fanout_c <- GetProfile(username) }()
+    }
+    select {
+    case profile := <- fanout_c:
+        c <- profile
+    }
+}
+
+func ProfileHandler(w http.ResponseWriter, r *http.Request) {
+    // TODO: Error handling on bad input
+
+    r.ParseForm()
+    usernames := strings.Split(r.Form.Get("usernames"), ",")
+    profiles := FetchProfiles(usernames)
 
     // Assemble and send response
     log.Printf("profiles: %v", profiles)
