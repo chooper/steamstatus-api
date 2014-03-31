@@ -21,6 +21,37 @@ type ProfileData struct {
     InGame          string  `json:"ingame"`
 }
 
+func ParseProfile(response_body *string) ProfileData {
+    var profile ProfileData
+    json_regex := regexp.MustCompile(`g_rgProfileData = (.*);`)
+    json_matches := json_regex.FindStringSubmatch(*response_body)
+
+    if len(json_matches) > 0 {
+        if err := json.Unmarshal([]byte(json_matches[1]), &profile); err != nil {
+            panic(err)
+        }
+    }
+
+    // Find out if user is in a game
+    ingame_regex := regexp.MustCompile(`<div class="profile_in_game_header">(.*)</div>`)
+    ingame_matches := ingame_regex.FindStringSubmatch(*response_body)
+
+    var ingame bool = false
+    if len(ingame_matches) > 0 && ingame_matches[1] == "Currently In-Game" {
+        ingame = true
+
+        // Find out which game
+        gamename_regex := regexp.MustCompile(`<div class="profile_in_game_name">(.*)</div>`)
+        gamename_matches := gamename_regex.FindStringSubmatch(*response_body)
+
+        // Add the game name to ProfileData
+        if ingame && len(gamename_matches) > 0 {
+            profile.InGame = gamename_matches[1]
+        }
+    }
+    return profile
+}
+
 func GetProfile(username string) ProfileData {
     // Download the profile from steam
     profile_url := "http://steamcommunity.com/id/" + username + "/"
@@ -33,37 +64,10 @@ func GetProfile(username string) ProfileData {
     if err != nil {
         panic(err)
     }
+    response_body := string(body)
 
     // Parse profile data
-    var profile ProfileData
-    json_regex := regexp.MustCompile(`g_rgProfileData = (.*);`)
-    json_matches := json_regex.FindStringSubmatch(string(body))
-
-    if len(json_matches) > 0 {
-        if err = json.Unmarshal([]byte(json_matches[1]), &profile); err != nil {
-            panic(err)
-        }
-    }
-
-    // Find out if user is in a game
-    ingame_regex := regexp.MustCompile(`<div class="profile_in_game_header">(.*)</div>`)
-    ingame_matches := ingame_regex.FindStringSubmatch(string(body))
-
-    var ingame bool = false
-    if len(ingame_matches) > 0 && ingame_matches[1] == "Currently In-Game" {
-        ingame = true
-
-        // Find out which game
-        gamename_regex := regexp.MustCompile(`<div class="profile_in_game_name">(.*)</div>`)
-        gamename_matches := gamename_regex.FindStringSubmatch(string(body))
-
-        // Add the game name to ProfileData
-        if ingame && len(gamename_matches) > 0 {
-            profile.InGame = gamename_matches[1]
-        }
-    }
-
-    return profile
+    return ParseProfile(&response_body)
 }
 
 func FetchProfiles(usernames []string) []ProfileData {
