@@ -6,7 +6,7 @@ import (
     "log"
     "net/http"
     "os"
-    "github.com/chooper/steam-status/profiles"
+    "github.com/chooper/steam-status/web"
     "time"
 )
 
@@ -17,7 +17,7 @@ func main() {
         assigned_port = "5000"
     }
 
-    http.HandleFunc("/status", profiles.ProfileHandler)
+    http.HandleFunc("/status", web.ProfileHandler)
 
     s := &http.Server{
         Addr:           ":" + assigned_port,
