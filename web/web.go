@@ -5,7 +5,7 @@ import (
     "encoding/json"
     "log"
     "net/http"
-    "github.com/chooper/steam-status/profiles"
+    "github.com/chooper/steamstatus-api/profiles"
     "strings"
 )
 

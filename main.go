@@ -6,7 +6,7 @@ import (
     "log"
     "net/http"
     "os"
-    "github.com/chooper/steam-status/web"
+    "github.com/chooper/steamstatus-api/web"
     "time"
 )
 

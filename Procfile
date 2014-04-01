@@ -1,1 +1,1 @@
-web: steam-status
+web: steamstatus-api

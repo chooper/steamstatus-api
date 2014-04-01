@@ -1,16 +1,16 @@
-# steam-status
+# steamstatus-api
 
-`steam-status` is a REST-like API wrapper for Steam profiles. It only supports
+`steamstatus-api` is a REST-like API wrapper for Steam profiles. It only supports
 one method and gets its data by scraping the webpage.
 
-`steam-status` supports multiple usernames being queried at once and will request
+`steamstatus-api` supports multiple usernames being queried at once and will request
 them in parallel. In testing, each response from steam takes 400-600ms and
-`steam-status` is able to return all responses within that time.
+`steamstatus-api` is able to return all responses within that time.
 
 ## Usage
 
 ```
-$ curl 'http://steam-status/status?usernames=foxhop,chuckbang,japherwocky'
+$ curl 'http://steamstatus-api/status?usernames=foxhop,chuckbang,japherwocky'
 [{"url":"http://steamcommunity.com/id/foxhop/","steamid":"76561197960708678","personaname":"Foxhop","summary":"No information given.","ingame":""},{"url":"http://steamcommunity.com/id/japherwocky/","steamid":"76561198049551053","personaname":"japherwocky","summary":"No information given.","ingame":""},{"url":"http://steamcommunity.com/id/chuckbang/","steamid":"76561197961485911","personaname":"chuck!","summary":"No information given.","ingame":"Counter-Strike: Global Offensive"}]
 ```
 
