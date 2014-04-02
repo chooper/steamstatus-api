@@ -60,11 +60,11 @@ func GetProfile(username string) (ProfileData, error) {
     response, err := http.Get(profile_url)
     defer response.Body.Close()
     if err != nil {
-        panic(err)
+        return ProfileData{}, err
     }
     body, err := ioutil.ReadAll(response.Body)
     if err != nil {
-        panic(err)
+        return ProfileData{}, err
     }
     response_body := string(body)
 
