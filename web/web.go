@@ -20,7 +20,7 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
     log.Printf("profiles: %v", profiles)
     profile_json, err := json.Marshal(profiles)
     if err != nil {
-        panic(err)
+        http.Error(w, err.Error(), 500)
     }
     w.Write(profile_json)
 }
