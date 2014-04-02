@@ -10,6 +10,7 @@ them in parallel. In testing, each response from steam takes 400-600ms and
 ## Usage
 
 ```
+$ ./steamstatus-api web
 $ curl 'http://steamstatus-api/status?usernames=foxhop,chuckbang,japherwocky'
 [{"url":"http://steamcommunity.com/id/foxhop/","steamid":"76561197960708678","personaname":"Foxhop","summary":"No information given.","ingame":""},{"url":"http://steamcommunity.com/id/japherwocky/","steamid":"76561198049551053","personaname":"japherwocky","summary":"No information given.","ingame":""},{"url":"http://steamcommunity.com/id/chuckbang/","steamid":"76561197961485911","personaname":"chuck!","summary":"No information given.","ingame":"Counter-Strike: Global Offensive"}]
 ```
@@ -25,4 +26,5 @@ $ curl 'http://steamstatus-api/status?usernames=foxhop,chuckbang,japherwocky'
 Variable | Description | Example
 -------- | ----------- | -------
 `PORT` | The port to listen for API requests on | `5000`
+`POLL_USERNAMES` | The usernames to poll the status for | `foxhop,japherwocky`
 
